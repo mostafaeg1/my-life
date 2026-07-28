@@ -164,13 +164,15 @@ function App() {
                   : 'Track time on anything — homework, reading, side projects — one focus session at a time.'}
             </p>
           </div>
-          <div className="summary-card">
-            <span className="summary-label">Total tracked</span>
-            <strong>
-              {Math.floor(totalTrackedSeconds / 3600)}h{' '}
-              {Math.floor((totalTrackedSeconds % 3600) / 60)}m
-            </strong>
-          </div>
+          {view === 'tracker' ? (
+            <div className="summary-card">
+              <span className="summary-label">Total tracked</span>
+              <strong>
+                {Math.floor(totalTrackedSeconds / 3600)}h{' '}
+                {Math.floor((totalTrackedSeconds % 3600) / 60)}m
+              </strong>
+            </div>
+          ) : null}
         </header>
 
         {view === 'dashboard' ? (
