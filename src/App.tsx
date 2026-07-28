@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { AddProjectForm } from './components/AddProjectForm'
 import { Dashboard } from './components/Dashboard'
 import { FocusSession } from './components/FocusSession'
+import { Habits } from './components/Habits'
 import { ProjectList } from './components/ProjectList'
+import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
 import { elapsedSecondsSince, formatToday } from './utils/time'
 import './App.css'
 
-type View = 'tracker' | 'dashboard'
+type View = 'tracker' | 'dashboard' | 'habits'
 
 function App() {
   const {
@@ -21,6 +23,8 @@ function App() {
     stopSession,
     getProject,
   } = useTimeTracker()
+
+  const { habits, addHabit, deleteHabit, toggleDate } = useHabits()
 
   const [view, setView] = useState<View>('tracker')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
@@ -109,6 +113,14 @@ function App() {
           >
             Dashboard
           </button>
+          <button
+            type="button"
+            className={`mode-button ${view === 'habits' ? 'selected' : ''}`}
+            aria-pressed={view === 'habits'}
+            onClick={() => setView('habits')}
+          >
+            Habits
+          </button>
         </nav>
 
         <div className="sidebar-header">
@@ -140,12 +152,16 @@ function App() {
         <header className="app-header">
           <div>
             <p className="eyebrow">Focus tracker</p>
-            <h1>{view === 'dashboard' ? 'Dashboard' : 'Project Time Tracker'}</h1>
+            <h1>
+              {view === 'dashboard' ? 'Dashboard' : view === 'habits' ? 'Habits' : 'Project Time Tracker'}
+            </h1>
             <p className="today-date">{formatToday()}</p>
             <p className="subtitle">
               {view === 'dashboard'
                 ? 'See how your focused time breaks down over the last week, month, or year.'
-                : 'Track time on anything — homework, reading, side projects — one focus session at a time.'}
+                : view === 'habits'
+                  ? "Build routines and don't break the chain."
+                  : 'Track time on anything — homework, reading, side projects — one focus session at a time.'}
             </p>
           </div>
           <div className="summary-card">
@@ -159,6 +175,8 @@ function App() {
 
         {view === 'dashboard' ? (
           <Dashboard projects={projects} sessions={sessions} />
+        ) : view === 'habits' ? (
+          <Habits habits={habits} onAdd={addHabit} onDelete={deleteHabit} onToggleDate={toggleDate} />
         ) : (
           <main className="focus-area">
             <FocusSession

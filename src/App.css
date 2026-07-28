@@ -844,6 +844,148 @@
   border-bottom: none;
 }
 
+.habits-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.add-habit-form {
+  max-width: 26rem;
+}
+
+.habit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.habit-card {
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.habit-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.9rem;
+}
+
+.habit-card-heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.habit-card-heading h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.habit-streaks {
+  display: flex;
+  gap: 0.85rem;
+  margin: 0.15rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.habit-streaks strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.today-toggle {
+  flex-shrink: 0;
+  height: 2rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.today-toggle:hover {
+  background: var(--surface-muted);
+}
+
+.today-toggle.done {
+  border-color: transparent;
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.habit-chain-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.habit-chain-months {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 0.3rem;
+}
+
+.habit-chain-month-label {
+  width: 13px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  color: var(--text-subtle);
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.habit-chain-grid {
+  display: flex;
+  gap: 3px;
+  width: max-content;
+}
+
+.habit-chain-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.habit-chain-day {
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface-muted);
+  cursor: pointer;
+}
+
+.habit-chain-day:hover:not(.future) {
+  border-color: var(--border-strong);
+}
+
+.habit-chain-day:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.habit-chain-day.done {
+  border-width: 1px;
+}
+
+.habit-chain-day.future {
+  border-style: dashed;
+  opacity: 0.5;
+  cursor: default;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     flex-direction: column;

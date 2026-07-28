@@ -24,3 +24,11 @@ export interface AppState {
   activeSession: ActiveSession | null
   sessions: SessionRecord[]
 }
+
+export interface Habit {
+  id: string
+  name: string
+  color: string
+  createdAt: string
+  completedDates: string[]
+}
