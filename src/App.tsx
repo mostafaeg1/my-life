@@ -7,7 +7,7 @@ import { ProjectList } from './components/ProjectList'
 import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
-import { elapsedSecondsSince, formatToday } from './utils/time'
+import { elapsedSecondsSince, formatDuration, formatToday } from './utils/time'
 import './App.css'
 
 type View = 'tracker' | 'dashboard' | 'habits'
@@ -172,11 +172,8 @@ function App() {
           </div>
           {view === 'tracker' ? (
             <div className="summary-card">
-              <span className="summary-label">Total tracked</span>
-              <strong>
-                {Math.floor(totalTrackedSeconds / 3600)}h{' '}
-                {Math.floor((totalTrackedSeconds % 3600) / 60)}m
-              </strong>
+              <span className="summary-label">Focused Time</span>
+              <strong>{formatDuration(totalTrackedSeconds)}</strong>
             </div>
           ) : null}
         </header>

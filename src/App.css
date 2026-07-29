@@ -98,8 +98,8 @@
 .summary-card {
   display: grid;
   gap: 0.25rem;
-  min-width: 8rem;
-  padding: 1rem 1.25rem;
+  min-width: 12rem;
+  padding: 1.5rem 2.25rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -114,7 +114,8 @@
 
 .summary-label {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  /* color: greenyellow; */
+  font-size: 1.2rem;
 }
 
 .focus-area {
@@ -1231,6 +1232,7 @@
 
   .summary-card {
     width: 100%;
+
   }
 
   .fab-button {
