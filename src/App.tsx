@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { AddProjectForm } from './components/AddProjectForm'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { Dashboard } from './components/Dashboard'
-import { FocusSession } from './components/FocusSession'
+import { FocusSession, type SessionMode } from './components/FocusSession'
 import { Habits } from './components/Habits'
 import { ProjectList } from './components/ProjectList'
+import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
 import { elapsedSecondsSince, formatToday } from './utils/time'
@@ -30,6 +31,10 @@ function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [liveElapsedSeconds, setLiveElapsedSeconds] = useState(0)
+  const [pendingDeleteProjectId, setPendingDeleteProjectId] = useState<string | null>(null)
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false)
+  const [sessionMode, setSessionMode] = useState<SessionMode>('stopwatch')
+  const [durationMinutes, setDurationMinutes] = useState(25)
 
   useEffect(() => {
     if (!activeSession) {
@@ -73,8 +78,12 @@ function App() {
   }
 
   function handleDelete(projectId: string) {
-    const confirmed = window.confirm('Delete this project and its tracked time?')
-    if (!confirmed) return
+    setPendingDeleteProjectId(projectId)
+  }
+
+  function confirmDeleteProject() {
+    const projectId = pendingDeleteProjectId
+    if (!projectId) return
 
     deleteProject(projectId)
     if (selectedProjectId === projectId) {
@@ -83,6 +92,7 @@ function App() {
     if (editingProjectId === projectId) {
       setEditingProjectId(null)
     }
+    setPendingDeleteProjectId(null)
   }
 
   const totalTrackedSeconds = projects.reduce((sum, project) => {
@@ -142,16 +152,12 @@ function App() {
             onDelete={handleDelete}
           />
         </div>
-
-        <div className="sidebar-footer">
-          <AddProjectForm onAdd={addProject} />
-        </div>
       </aside>
 
       <div className="main-content">
         <header className="app-header">
           <div>
-            <p className="eyebrow">Focus tracker</p>
+            <p className="eyebrow">My Life</p>
             <h1>
               {view === 'dashboard' ? 'Dashboard' : view === 'habits' ? 'Habits' : 'Project Time Tracker'}
             </h1>
@@ -180,17 +186,55 @@ function App() {
         ) : view === 'habits' ? (
           <Habits habits={habits} onAdd={addHabit} onDelete={deleteHabit} onToggleDate={toggleDate} />
         ) : (
-          <main className="focus-area">
-            <FocusSession
-              project={isRunning ? activeProject : selectedProject}
-              isRunning={isRunning}
-              liveElapsedSeconds={liveElapsedSeconds}
-              onStart={handleStart}
-              onStop={stopSession}
-            />
-          </main>
+          <>
+            <main className="focus-area">
+              <FocusSession
+                project={isRunning ? activeProject : selectedProject}
+                isRunning={isRunning}
+                liveElapsedSeconds={liveElapsedSeconds}
+                mode={sessionMode}
+                onModeChange={setSessionMode}
+                durationMinutes={durationMinutes}
+                onDurationMinutesChange={setDurationMinutes}
+                onStart={handleStart}
+                onStop={stopSession}
+              />
+            </main>
+
+            <button
+              type="button"
+              className="fab-button"
+              aria-label="Add project"
+              onClick={() => setIsAddProjectOpen(true)}
+            >
+              +
+            </button>
+          </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDeleteProjectId !== null}
+        title="Delete project?"
+        message="This will delete the project and its tracked time. This can't be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={confirmDeleteProject}
+        onCancel={() => setPendingDeleteProjectId(null)}
+      />
+
+      <PromptDialog
+        open={isAddProjectOpen}
+        title="Add project"
+        placeholder="Math homework, reading..."
+        confirmLabel="Add project"
+        onSubmit={(name) => {
+          const added = addProject(name)
+          if (added) setIsAddProjectOpen(false)
+          return added
+        }}
+        onCancel={() => setIsAddProjectOpen(false)}
+      />
     </div>
   )
 }

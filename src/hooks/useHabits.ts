@@ -41,12 +41,15 @@ export function useHabits() {
     const trimmed = name.trim()
     if (!trimmed) return false
 
+    let added = false
+
     setState((current) => {
       const exists = current.habits.some(
         (habit) => habit.name.toLowerCase() === trimmed.toLowerCase(),
       )
       if (exists) return current
 
+      added = true
       const habit: Habit = {
         id: createId(),
         name: trimmed,
@@ -58,7 +61,7 @@ export function useHabits() {
       return { habits: [habit, ...current.habits] }
     })
 
-    return true
+    return added
   }, [])
 
   const deleteHabit = useCallback((habitId: string) => {

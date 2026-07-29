@@ -40,12 +40,15 @@ export function useTimeTracker() {
     const trimmed = name.trim()
     if (!trimmed) return false
 
+    let added = false
+
     setState((current) => {
       const exists = current.projects.some(
         (project) => project.name.toLowerCase() === trimmed.toLowerCase(),
       )
       if (exists) return current
 
+      added = true
       const project: Project = {
         id: createId(),
         name: trimmed,
@@ -60,7 +63,7 @@ export function useTimeTracker() {
       }
     })
 
-    return true
+    return added
   }, [])
 
   const deleteProject = useCallback((projectId: string) => {
