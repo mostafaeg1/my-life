@@ -71,7 +71,6 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
                 </div>
 
                 <HabitChain
-                  color={habit.color}
                   completedDates={habit.completedDates}
                   onToggle={(dateKey) => onToggleDate(habit.id, dateKey)}
                 />

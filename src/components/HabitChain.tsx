@@ -2,7 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { buildMonthGrid, buildYearGrid, type CalendarDay } from '../utils/habitDates'
 
 interface HabitChainProps {
-  color: string
   completedDates: string[]
   onToggle: (dateKey: string) => void
 }
@@ -42,12 +41,11 @@ function useYearBandCount(): number {
 interface CalendarGridProps {
   weeks: CalendarDay[][]
   completed: Set<string>
-  color: string
   onToggle: (dateKey: string) => void
   bands?: number
 }
 
-function CalendarGrid({ weeks, completed, color, onToggle, bands = 1 }: CalendarGridProps) {
+function CalendarGrid({ weeks, completed, onToggle, bands = 1 }: CalendarGridProps) {
   function renderDay(day: CalendarDay, position?: CSSProperties) {
     const isDone = day.isInPeriod && completed.has(day.key)
     const isInteractive = day.isInPeriod && !day.isFuture
@@ -65,17 +63,14 @@ function CalendarGrid({ weeks, completed, color, onToggle, bands = 1 }: Calendar
         ]
           .filter(Boolean)
           .join(' ')}
-        style={{
-          ...position,
-          ...(isDone ? { backgroundColor: color, borderColor: color } : undefined),
-        }}
+        style={position}
         disabled={!isInteractive}
         aria-pressed={isDone}
         aria-label={`${FULL_DAY_LABEL.format(day.date)}: ${isDone ? 'done' : 'not done'}`}
         title={FULL_DAY_LABEL.format(day.date)}
         onClick={() => onToggle(day.key)}
       >
-        {day.isInPeriod ? day.dayNumber : null}
+        {day.isInPeriod ? (isDone ? '×' : day.dayNumber) : null}
       </button>
     )
   }
@@ -131,7 +126,7 @@ function CalendarGrid({ weeks, completed, color, onToggle, bands = 1 }: Calendar
   )
 }
 
-export function HabitChain({ color, completedDates, onToggle }: HabitChainProps) {
+export function HabitChain({ completedDates, onToggle }: HabitChainProps) {
   const today = new Date()
   const [view, setView] = useState<CalendarView>('month')
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() })
@@ -221,7 +216,6 @@ export function HabitChain({ color, completedDates, onToggle }: HabitChainProps)
       <CalendarGrid
         weeks={weeks}
         completed={completed}
-        color={color}
         onToggle={onToggle}
         bands={view === 'year' ? yearBandCount : 1}
       />
