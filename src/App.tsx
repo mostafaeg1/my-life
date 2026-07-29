@@ -7,10 +7,11 @@ import { ProjectList } from './components/ProjectList'
 import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
-import { elapsedSecondsSince, formatDuration, formatToday } from './utils/time'
+import { elapsedSecondsSince, formatClock, formatDuration, formatToday } from './utils/time'
 import './App.css'
 
 type View = 'tracker' | 'dashboard' | 'habits'
+const DEFAULT_TITLE = 'My Life'
 
 function App() {
   const {
@@ -55,6 +56,24 @@ function App() {
   const selectedProject = selectedProjectId ? getProject(selectedProjectId) : undefined
   const activeProject = activeSession ? getProject(activeSession.projectId) : undefined
   const isRunning = Boolean(activeSession && selectedProjectId === activeSession.projectId)
+
+  useEffect(() => {
+    if (!isRunning || !activeProject) {
+      document.title = DEFAULT_TITLE
+      return
+    }
+
+    const displaySeconds =
+      sessionMode === 'timer'
+        ? Math.max(0, durationMinutes * 60 - liveElapsedSeconds)
+        : liveElapsedSeconds
+
+    document.title = `${formatClock(displaySeconds)} · ${activeProject.name}`
+
+    return () => {
+      document.title = DEFAULT_TITLE
+    }
+  }, [isRunning, activeProject, sessionMode, durationMinutes, liveElapsedSeconds])
 
   function handleSelect(projectId: string) {
     if (activeSession && activeSession.projectId !== projectId) {
