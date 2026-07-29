@@ -827,6 +827,7 @@
 }
 
 .habit-card {
+  min-width: 0;
   padding: 1.1rem 1.25rem 1.25rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -975,6 +976,7 @@
 .habit-year-grid {
   display: grid;
   gap: 0.3rem;
+  min-width: 0;
   overflow-x: auto;
 }
 
@@ -1013,7 +1015,11 @@
 }
 
 .habit-month-day.done {
-  color: white;
+  background: var(--danger-bg);
+  border-color: var(--danger-bg);
+  color: var(--danger);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .habit-month-day.outside {
