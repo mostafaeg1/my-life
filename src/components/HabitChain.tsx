@@ -70,7 +70,18 @@ function CalendarGrid({ weeks, completed, onToggle, bands = 1 }: CalendarGridPro
         title={FULL_DAY_LABEL.format(day.date)}
         onClick={() => onToggle(day.key)}
       >
-        {day.isInPeriod ? (isDone ? '×' : day.dayNumber) : null}
+        {day.isInPeriod ? (
+          isDone ? (
+            <span className="habit-day-content">
+              <span className="habit-day-mark" aria-hidden="true">
+                ×
+              </span>
+              <span className="habit-day-number">{day.dayNumber}</span>
+            </span>
+          ) : (
+            day.dayNumber
+          )
+        ) : null}
       </button>
     )
   }

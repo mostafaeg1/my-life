@@ -43,13 +43,13 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
                 <div className="habit-card-header">
                   <span className="project-color" style={{ backgroundColor: habit.color }} />
                   <div className="habit-card-heading">
-                    <h3>{habit.name}</h3>
+                    <h3 className="habit-name">{habit.name}</h3>
                     <p className="habit-streaks">
                       <span>
-                        <strong>{currentStreak}</strong> day{currentStreak === 1 ? '' : 's'} current
+                      current streak: <strong>{currentStreak}</strong> day{currentStreak === 1 ? '' : 's'} 
                       </span>
                       <span>
-                        <strong>{longestStreak}</strong> day{longestStreak === 1 ? '' : 's'} best
+                      best streak: <strong> {longestStreak}</strong> day{longestStreak === 1 ? '' : 's'} 
                       </span>
                     </p>
                   </div>

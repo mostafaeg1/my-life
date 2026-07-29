@@ -849,7 +849,7 @@
 
 .habit-card-heading h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size:2rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -859,7 +859,7 @@
   gap: 0.85rem;
   margin: 0.15rem 0 0;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.9rem;
 }
 
 .habit-streaks strong {
@@ -1014,12 +1014,26 @@
   outline-offset: 1px;
 }
 
-.habit-month-day.done {
-  background: var(--danger-bg);
-  border-color: var(--danger-bg);
+.habit-day-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.habit-day-mark {
   color: var(--danger);
-  font-size: 1rem;
   font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.habit-day-number {
+  margin-top: 1px;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: var(--text-muted);
 }
 
 .habit-month-day.outside {
@@ -1032,7 +1046,7 @@
   cursor: not-allowed;
 }
 
-.habit-month-day.today:not(.done) {
+.habit-month-day.today {
   border-color: var(--text);
 }
 
@@ -1233,4 +1247,10 @@
   .main-content {
     padding: 1.25rem 1rem 1.5rem;
   }
+}
+
+.habit-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
 }
