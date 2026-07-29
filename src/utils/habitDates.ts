@@ -1,7 +1,10 @@
-export interface ChainDay {
+export interface CalendarDay {
   key: string
   date: Date
+  dayNumber: number
+  isInPeriod: boolean
   isFuture: boolean
+  isToday: boolean
 }
 
 export function toDateKey(date: Date): string {
@@ -43,24 +46,54 @@ export function getLongestStreak(completedDates: string[]): number {
   return longest
 }
 
-export function buildChainWeeks(weekCount: number, today: Date = new Date()): ChainDay[][] {
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  const gridEnd = new Date(end)
-  gridEnd.setDate(end.getDate() + (6 - end.getDay()))
+export function buildMonthGrid(year: number, month: number, today: Date = new Date()): CalendarDay[][] {
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const firstOfMonth = new Date(year, month, 1)
+  const gridStart = new Date(year, month, 1 - firstOfMonth.getDay())
 
-  const gridStart = new Date(gridEnd)
-  gridStart.setDate(gridEnd.getDate() - weekCount * 7 + 1)
-
-  const weeks: ChainDay[][] = []
+  const weeks: CalendarDay[][] = []
   const cursor = new Date(gridStart)
 
-  for (let week = 0; week < weekCount; week += 1) {
-    const days: ChainDay[] = []
+  for (let week = 0; week < 6; week += 1) {
+    const days: CalendarDay[] = []
     for (let day = 0; day < 7; day += 1) {
       days.push({
         key: toDateKey(cursor),
         date: new Date(cursor),
-        isFuture: cursor.getTime() > end.getTime(),
+        dayNumber: cursor.getDate(),
+        isInPeriod: cursor.getMonth() === month,
+        isFuture: cursor.getTime() > todayStart.getTime(),
+        isToday: cursor.getTime() === todayStart.getTime(),
+      })
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    weeks.push(days)
+  }
+
+  return weeks
+}
+
+export function buildYearGrid(year: number, today: Date = new Date()): CalendarDay[][] {
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const jan1 = new Date(year, 0, 1)
+  const dec31 = new Date(year, 11, 31)
+  const gridStart = new Date(year, 0, 1 - jan1.getDay())
+  const totalDays = Math.round((dec31.getTime() - gridStart.getTime()) / 86_400_000) + 1
+  const weekCount = Math.ceil(totalDays / 7)
+
+  const weeks: CalendarDay[][] = []
+  const cursor = new Date(gridStart)
+
+  for (let week = 0; week < weekCount; week += 1) {
+    const days: CalendarDay[] = []
+    for (let day = 0; day < 7; day += 1) {
+      days.push({
+        key: toDateKey(cursor),
+        date: new Date(cursor),
+        dayNumber: cursor.getDate(),
+        isInPeriod: cursor.getFullYear() === year,
+        isFuture: cursor.getTime() > todayStart.getTime(),
+        isToday: cursor.getTime() === todayStart.getTime(),
       })
       cursor.setDate(cursor.getDate() + 1)
     }

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import type { Habit } from '../types'
 import { getCurrentStreak, getLongestStreak, toDateKey } from '../utils/habitDates'
-import { AddHabitForm } from './AddHabitForm'
+import { ConfirmDialog } from './ConfirmDialog'
 import { HabitChain } from './HabitChain'
+import { PromptDialog } from './PromptDialog'
 
 interface HabitsProps {
   habits: Habit[]
@@ -12,21 +14,22 @@ interface HabitsProps {
 
 export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
   const today = toDateKey(new Date())
+  const [pendingDeleteHabitId, setPendingDeleteHabitId] = useState<string | null>(null)
+  const pendingDeleteHabit = habits.find((habit) => habit.id === pendingDeleteHabitId)
+  const [isAddHabitOpen, setIsAddHabitOpen] = useState(false)
 
-  function handleDelete(habitId: string, habitName: string) {
-    const confirmed = window.confirm(`Delete "${habitName}" and its chain history?`)
-    if (!confirmed) return
-    onDelete(habitId)
+  function confirmDelete() {
+    if (!pendingDeleteHabitId) return
+    onDelete(pendingDeleteHabitId)
+    setPendingDeleteHabitId(null)
   }
 
   return (
     <section className="habits-panel">
-      <AddHabitForm onAdd={onAdd} />
-
       {habits.length === 0 ? (
         <div className="empty-state">
           <p>No habits yet.</p>
-          <p>Add one above and start your chain today.</p>
+          <p>Use the + button to add one and start your chain today.</p>
         </div>
       ) : (
         <ul className="habit-list">
@@ -61,7 +64,7 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
                     type="button"
                     className="delete-button"
                     aria-label={`Delete ${habit.name}`}
-                    onClick={() => handleDelete(habit.id, habit.name)}
+                    onClick={() => setPendingDeleteHabitId(habit.id)}
                   >
                     ×
                   </button>
@@ -77,6 +80,38 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
           })}
         </ul>
       )}
+
+      <button
+        type="button"
+        className="fab-button"
+        aria-label="Add habit"
+        onClick={() => setIsAddHabitOpen(true)}
+      >
+        +
+      </button>
+
+      <ConfirmDialog
+        open={pendingDeleteHabitId !== null}
+        title="Delete habit?"
+        message={`This will delete "${pendingDeleteHabit?.name}" and its chain history. This can't be undone.`}
+        confirmLabel="Delete"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDeleteHabitId(null)}
+      />
+
+      <PromptDialog
+        open={isAddHabitOpen}
+        title="Add habit"
+        placeholder="Meditate, stretch, read..."
+        confirmLabel="Add habit"
+        onSubmit={(name) => {
+          const added = onAdd(name)
+          if (added) setIsAddHabitOpen(false)
+          return added
+        }}
+        onCancel={() => setIsAddHabitOpen(false)}
+      />
     </section>
   )
 }

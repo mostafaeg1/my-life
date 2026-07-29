@@ -1,17 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { Project } from '../types'
 import { playBell } from '../utils/sound'
 import { formatClock, formatDuration } from '../utils/time'
 
-type SessionMode = 'stopwatch' | 'timer'
+export type SessionMode = 'stopwatch' | 'timer'
 
 const DURATION_PRESETS_MINUTES = [5, 15, 25, 50]
-const DEFAULT_DURATION_MINUTES = 25
 
 interface FocusSessionProps {
   project: Project | undefined
   isRunning: boolean
   liveElapsedSeconds: number
+  mode: SessionMode
+  onModeChange: (mode: SessionMode) => void
+  durationMinutes: number
+  onDurationMinutesChange: (minutes: number) => void
   onStart: () => void
   onStop: () => void
 }
@@ -20,11 +23,13 @@ export function FocusSession({
   project,
   isRunning,
   liveElapsedSeconds,
+  mode,
+  onModeChange,
+  durationMinutes,
+  onDurationMinutesChange,
   onStart,
   onStop,
 }: FocusSessionProps) {
-  const [mode, setMode] = useState<SessionMode>('stopwatch')
-  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES)
   const hasRungRef = useRef(false)
 
   const durationSeconds = durationMinutes * 60
@@ -72,7 +77,7 @@ export function FocusSession({
           className={`mode-button ${mode === 'stopwatch' ? 'selected' : ''}`}
           aria-pressed={mode === 'stopwatch'}
           disabled={isRunning}
-          onClick={() => setMode('stopwatch')}
+          onClick={() => onModeChange('stopwatch')}
         >
           Stopwatch
         </button>
@@ -81,7 +86,7 @@ export function FocusSession({
           className={`mode-button ${mode === 'timer' ? 'selected' : ''}`}
           aria-pressed={mode === 'timer'}
           disabled={isRunning}
-          onClick={() => setMode('timer')}
+          onClick={() => onModeChange('timer')}
         >
           Timer
         </button>
@@ -96,7 +101,7 @@ export function FocusSession({
                 key={minutes}
                 type="button"
                 className={`preset-button ${durationMinutes === minutes ? 'selected' : ''}`}
-                onClick={() => setDurationMinutes(minutes)}
+                onClick={() => onDurationMinutesChange(minutes)}
               >
                 {minutes}m
               </button>
@@ -112,12 +117,12 @@ export function FocusSession({
               onChange={(event) => {
                 const raw = event.target.value
                 if (raw === '') {
-                  setDurationMinutes(0)
+                  onDurationMinutesChange(0)
                   return
                 }
                 const parsed = Math.round(Number(raw))
                 if (Number.isFinite(parsed)) {
-                  setDurationMinutes(Math.max(0, Math.min(480, parsed)))
+                  onDurationMinutesChange(Math.max(0, Math.min(480, parsed)))
                 }
               }}
             />
