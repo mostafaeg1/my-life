@@ -42,6 +42,16 @@ export function formatCompactDuration(totalSeconds: number): string {
   return `${Math.round(minutes)}m`
 }
 
+export function isToday(isoDate: string): boolean {
+  const date = new Date(isoDate)
+  const now = new Date()
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  )
+}
+
 export function formatToday(): string {
   return new Date().toLocaleDateString(undefined, {
     weekday: 'long',
