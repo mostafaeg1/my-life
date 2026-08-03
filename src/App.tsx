@@ -10,7 +10,7 @@ import { useTimeTracker } from './hooks/useTimeTracker'
 import { elapsedSecondsSince, formatClock, formatDuration, formatToday, isToday } from './utils/time'
 import './App.css'
 
-type View = 'tracker' | 'dashboard' | 'habits' 
+type View = 'tracker' | 'habits'
 const DEFAULT_TITLE = 'My Life'
 
 function App() {
@@ -132,14 +132,6 @@ function App() {
           </button>
           <button
             type="button"
-            className={`mode-button ${view === 'dashboard' ? 'selected' : ''}`}
-            aria-pressed={view === 'dashboard'}
-            onClick={() => setView('dashboard')}
-          >
-            Dashboard
-          </button>
-          <button
-            type="button"
             className={`mode-button ${view === 'habits' ? 'selected' : ''}`}
             aria-pressed={view === 'habits'}
             onClick={() => setView('habits')}
@@ -173,16 +165,12 @@ function App() {
         <header className="app-header">
           <div>
             <p className="eyebrow">My Life</p>
-            <h1>
-              {view === 'dashboard' ? 'Dashboard' : view === 'habits' ? 'Habits' : 'Project Time Tracker'}
-            </h1>
+            <h1>{view === 'habits' ? 'Habits' : 'Project Time Tracker'}</h1>
             <p className="today-date">{formatToday()}</p>
             <p className="subtitle">
-              {view === 'dashboard'
-                ? 'See how your focused time breaks down over the last week, month, or year.'
-                : view === 'habits'
-                  ? "Build routines and don't break the chain."
-                  : 'Track time on anything — homework, reading, side projects — one focus session at a time.'}
+              {view === 'habits'
+                ? "Build routines and don't break the chain."
+                : 'Track time on anything — homework, reading, side projects — one focus session at a time.'}
             </p>
           </div>
           {view === 'tracker' ? (
@@ -193,9 +181,7 @@ function App() {
           ) : null}
         </header>
 
-        {view === 'dashboard' ? (
-          <Dashboard projects={projects} sessions={sessions} />
-        ) : view === 'habits' ? (
+        {view === 'habits' ? (
           <Habits habits={habits} onAdd={addHabit} onDelete={deleteHabit} onToggleDate={toggleDate} />
         ) : (
           <>
@@ -212,6 +198,12 @@ function App() {
                 onStop={stopSession}
               />
             </main>
+
+            <section className="tracker-dashboard">
+              <p className="eyebrow">Overview</p>
+              <h2 className="tracker-dashboard-heading">Focused time breakdown</h2>
+              <Dashboard projects={projects} sessions={sessions} />
+            </section>
 
             <button
               type="button"
