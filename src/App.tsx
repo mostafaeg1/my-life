@@ -140,25 +140,29 @@ function App() {
           </button>
         </nav>
 
-        <div className="sidebar-header">
-          <h2>Projects</h2>
-          <span className="project-count">{projects.length}</span>
-        </div>
+        {view === 'tracker' ? (
+          <>
+            <div className="sidebar-header">
+              <h2>Projects</h2>
+              <span className="project-count">{projects.length}</span>
+            </div>
 
-        <div className="sidebar-content">
-          <ProjectList
-            projects={projects}
-            activeSession={activeSession}
-            selectedProjectId={selectedProjectId}
-            editingProjectId={editingProjectId}
-            liveElapsedSeconds={liveElapsedSeconds}
-            onSelect={handleSelect}
-            onToggleEdit={handleToggleEdit}
-            onCloseEdit={handleCloseEdit}
-            onSave={updateProject}
-            onDelete={handleDelete}
-          />
-        </div>
+            <div className="sidebar-content">
+              <ProjectList
+                projects={projects}
+                activeSession={activeSession}
+                selectedProjectId={selectedProjectId}
+                editingProjectId={editingProjectId}
+                liveElapsedSeconds={liveElapsedSeconds}
+                onSelect={handleSelect}
+                onToggleEdit={handleToggleEdit}
+                onCloseEdit={handleCloseEdit}
+                onSave={updateProject}
+                onDelete={handleDelete}
+              />
+            </div>
+          </>
+        ) : null}
       </aside>
 
       <div className="main-content">
