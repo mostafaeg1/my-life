@@ -7,10 +7,10 @@ import { ProjectList } from './components/ProjectList'
 import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
-import { elapsedSecondsSince, formatClock, formatDuration, formatToday } from './utils/time'
+import { elapsedSecondsSince, formatClock, formatDuration, formatToday, isToday } from './utils/time'
 import './App.css'
 
-type View = 'tracker' | 'dashboard' | 'habits'
+type View = 'tracker' | 'dashboard' | 'habits' 
 const DEFAULT_TITLE = 'My Life'
 
 function App() {
@@ -114,13 +114,9 @@ function App() {
     setPendingDeleteProjectId(null)
   }
 
-  const totalTrackedSeconds = projects.reduce((sum, project) => {
-    if (activeSession?.projectId === project.id) {
-      return sum + project.totalSeconds + liveElapsedSeconds
-    }
-
-    return sum + project.totalSeconds
-  }, 0)
+  const todaysFocusedSeconds =
+    sessions.reduce((sum, session) => (isToday(session.startedAt) ? sum + session.seconds : sum), 0) +
+    (activeSession && isToday(activeSession.startedAt) ? liveElapsedSeconds : 0)
 
   return (
     <div className="app-shell">
@@ -192,7 +188,7 @@ function App() {
           {view === 'tracker' ? (
             <div className="summary-card">
               <span className="summary-label">Focused Time</span>
-              <strong>{formatDuration(totalTrackedSeconds)}</strong>
+              <strong>{formatDuration(todaysFocusedSeconds)}</strong>
             </div>
           ) : null}
         </header>
