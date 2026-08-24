@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Dashboard } from './components/Dashboard'
 import { FocusSession, type SessionMode } from './components/FocusSession'
@@ -7,6 +7,7 @@ import { ProjectList } from './components/ProjectList'
 import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
+import { getAllLabels } from './utils/labels'
 import { elapsedSecondsSince, formatClock, formatDuration, formatToday, isToday } from './utils/time'
 import './App.css'
 
@@ -26,7 +27,7 @@ function App() {
     getProject,
   } = useTimeTracker()
 
-  const { habits, addHabit, deleteHabit, toggleDate } = useHabits()
+  const { habits, addHabit, deleteHabit, toggleDate, updateHabitLabels } = useHabits()
 
   const [view, setView] = useState<View>('tracker')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
@@ -118,6 +119,8 @@ function App() {
     sessions.reduce((sum, session) => (isToday(session.startedAt) ? sum + session.seconds : sum), 0) +
     (activeSession && isToday(activeSession.startedAt) ? liveElapsedSeconds : 0)
 
+  const allLabels = useMemo(() => getAllLabels(projects), [projects])
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -154,6 +157,7 @@ function App() {
                 selectedProjectId={selectedProjectId}
                 editingProjectId={editingProjectId}
                 liveElapsedSeconds={liveElapsedSeconds}
+                availableLabels={allLabels}
                 onSelect={handleSelect}
                 onToggleEdit={handleToggleEdit}
                 onCloseEdit={handleCloseEdit}
@@ -186,7 +190,13 @@ function App() {
         </header>
 
         {view === 'habits' ? (
-          <Habits habits={habits} onAdd={addHabit} onDelete={deleteHabit} onToggleDate={toggleDate} />
+          <Habits
+            habits={habits}
+            onAdd={addHabit}
+            onDelete={deleteHabit}
+            onToggleDate={toggleDate}
+            onUpdateLabels={updateHabitLabels}
+          />
         ) : (
           <>
             <main className="focus-area">
@@ -236,8 +246,9 @@ function App() {
         title="Add project"
         placeholder="Math homework, reading..."
         confirmLabel="Add project"
-        onSubmit={(name) => {
-          const added = addProject(name)
+        labelsField={{ label: 'Labels (optional)', availableLabels: allLabels }}
+        onSubmit={(name, labels) => {
+          const added = addProject(name, labels)
           if (added) setIsAddProjectOpen(false)
           return added
         }}

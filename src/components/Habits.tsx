@@ -1,22 +1,28 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Habit } from '../types'
 import { getCurrentStreak, getLongestStreak, toDateKey } from '../utils/habitDates'
+import { getAllLabels, getLabelColor } from '../utils/labels'
 import { ConfirmDialog } from './ConfirmDialog'
 import { HabitChain } from './HabitChain'
+import { LabelPicker } from './LabelPicker'
 import { PromptDialog } from './PromptDialog'
 
 interface HabitsProps {
   habits: Habit[]
-  onAdd: (name: string) => boolean
+  onAdd: (name: string, labels: string[]) => boolean
   onDelete: (habitId: string) => void
   onToggleDate: (habitId: string, dateKey: string) => void
+  onUpdateLabels: (habitId: string, labels: string[]) => void
 }
 
-export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
+export function Habits({ habits, onAdd, onDelete, onToggleDate, onUpdateLabels }: HabitsProps) {
   const today = toDateKey(new Date())
   const [pendingDeleteHabitId, setPendingDeleteHabitId] = useState<string | null>(null)
   const pendingDeleteHabit = habits.find((habit) => habit.id === pendingDeleteHabitId)
   const [isAddHabitOpen, setIsAddHabitOpen] = useState(false)
+  const [editingLabelsHabitId, setEditingLabelsHabitId] = useState<string | null>(null)
+
+  const availableLabels = useMemo(() => getAllLabels(habits), [habits])
 
   function confirmDelete() {
     if (!pendingDeleteHabitId) return
@@ -62,6 +68,21 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
                   </button>
                   <button
                     type="button"
+                    className={`edit-button ${editingLabelsHabitId === habit.id ? 'active' : ''}`}
+                    aria-label={
+                      editingLabelsHabitId === habit.id
+                        ? `Close label edit for ${habit.name}`
+                        : `Edit labels for ${habit.name}`
+                    }
+                    aria-expanded={editingLabelsHabitId === habit.id}
+                    onClick={() =>
+                      setEditingLabelsHabitId((current) => (current === habit.id ? null : habit.id))
+                    }
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
                     className="delete-button"
                     aria-label={`Delete ${habit.name}`}
                     onClick={() => setPendingDeleteHabitId(habit.id)}
@@ -69,6 +90,41 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
                     ×
                   </button>
                 </div>
+
+                {editingLabelsHabitId === habit.id ? (
+                  <div className="edit-project-section">
+                    <div className="edit-project-header">
+                      <div className="panel-heading">
+                        <h3>Edit labels</h3>
+                        <p>Update the labels for this habit.</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="close-edit-button"
+                        onClick={() => setEditingLabelsHabitId(null)}
+                        aria-label="Close edit"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="edit-project-form">
+                      <LabelPicker
+                        selectedLabels={habit.labels}
+                        availableLabels={availableLabels}
+                        onChange={(next) => onUpdateLabels(habit.id, next)}
+                      />
+                    </div>
+                  </div>
+                ) : habit.labels.length > 0 ? (
+                  <ul className="project-labels">
+                    {habit.labels.map((label) => (
+                      <li key={label} className="project-label-chip">
+                        <span className="label-dot" style={{ backgroundColor: getLabelColor(label) }} />
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
 
                 <HabitChain
                   completedDates={habit.completedDates}
@@ -104,8 +160,9 @@ export function Habits({ habits, onAdd, onDelete, onToggleDate }: HabitsProps) {
         title="Add habit"
         placeholder="Meditate, stretch, read..."
         confirmLabel="Add habit"
-        onSubmit={(name) => {
-          const added = onAdd(name)
+        labelsField={{ label: 'Labels (optional)', availableLabels }}
+        onSubmit={(name, labels) => {
+          const added = onAdd(name, labels)
           if (added) setIsAddHabitOpen(false)
           return added
         }}

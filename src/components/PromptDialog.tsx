@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { LabelPicker } from './LabelPicker'
+
+interface PromptDialogLabelsField {
+  label: string
+  availableLabels: string[]
+}
 
 interface PromptDialogProps {
   open: boolean
@@ -6,7 +12,8 @@ interface PromptDialogProps {
   placeholder: string
   confirmLabel?: string
   errorMessage?: string
-  onSubmit: (value: string) => boolean
+  labelsField?: PromptDialogLabelsField
+  onSubmit: (value: string, labels: string[]) => boolean
   onCancel: () => void
 }
 
@@ -16,10 +23,12 @@ export function PromptDialog({
   placeholder,
   confirmLabel = 'Add',
   errorMessage = 'Enter a name that is not already in your list.',
+  labelsField,
   onSubmit,
   onCancel,
 }: PromptDialogProps) {
   const [value, setValue] = useState('')
+  const [labels, setLabels] = useState<string[]>([])
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -27,6 +36,7 @@ export function PromptDialog({
     if (!open) return
 
     setValue('')
+    setLabels([])
     setError('')
     inputRef.current?.focus()
 
@@ -43,13 +53,14 @@ export function PromptDialog({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const added = onSubmit(value)
+    const added = onSubmit(value, labels)
     if (!added) {
       setError(errorMessage)
       return
     }
 
     setValue('')
+    setLabels([])
     setError('')
   }
 
@@ -76,6 +87,16 @@ export function PromptDialog({
             placeholder={placeholder}
             maxLength={60}
           />
+          {labelsField ? (
+            <div className="modal-secondary-field">
+              <span className="field-label">{labelsField.label}</span>
+              <LabelPicker
+                selectedLabels={labels}
+                availableLabels={labelsField.availableLabels}
+                onChange={setLabels}
+              />
+            </div>
+          ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <div className="modal-actions">
             <button type="button" className="modal-cancel-button" onClick={onCancel}>

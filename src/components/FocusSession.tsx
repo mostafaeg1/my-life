@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Project } from '../types'
+import { getLabelColor } from '../utils/labels'
 import { playBell } from '../utils/sound'
 import { formatClock, formatDuration } from '../utils/time'
 
@@ -70,6 +71,17 @@ export function FocusSession({
           <h2>{project.name}</h2>
         </div>
       </div>
+
+      {project.labels.length > 0 ? (
+        <ul className="project-labels">
+          {project.labels.map((label) => (
+            <li key={label} className="project-label-chip">
+              <span className="label-dot" style={{ backgroundColor: getLabelColor(label) }} />
+              {label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <div className="mode-switch" role="radiogroup" aria-label="Session mode">
         <button

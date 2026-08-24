@@ -16,7 +16,9 @@ function loadState(): HabitState {
     }
 
     const parsed = JSON.parse(raw) as HabitState
-    return { habits: parsed.habits ?? [] }
+    return {
+      habits: (parsed.habits ?? []).map((habit) => ({ ...habit, labels: habit.labels ?? [] })),
+    }
   } catch {
     return { habits: [] }
   }
@@ -37,7 +39,7 @@ export function useHabits() {
     saveState(state)
   }, [state])
 
-  const addHabit = useCallback((name: string) => {
+  const addHabit = useCallback((name: string, labels: string[] = []) => {
     const trimmed = name.trim()
     if (!trimmed) return false
 
@@ -56,12 +58,19 @@ export function useHabits() {
         color: PROJECT_COLORS[current.habits.length % PROJECT_COLORS.length],
         createdAt: new Date().toISOString(),
         completedDates: [],
+        labels,
       }
 
       return { habits: [habit, ...current.habits] }
     })
 
     return added
+  }, [])
+
+  const updateHabitLabels = useCallback((habitId: string, labels: string[]) => {
+    setState((current) => ({
+      habits: current.habits.map((habit) => (habit.id === habitId ? { ...habit, labels } : habit)),
+    }))
   }, [])
 
   const deleteHabit = useCallback((habitId: string) => {
@@ -91,5 +100,6 @@ export function useHabits() {
     addHabit,
     deleteHabit,
     toggleDate,
+    updateHabitLabels,
   }
 }

@@ -2,34 +2,41 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { PROJECT_COLORS } from '../constants/projectColors'
 import type { Project } from '../types'
 import { formatDuration } from '../utils/time'
+import { LabelPicker } from './LabelPicker'
 
 interface EditProjectSectionProps {
   project: Project
-  onSave: (projectId: string, updates: Pick<Project, 'name' | 'color'>) => boolean
+  availableLabels: string[]
+  onSave: (projectId: string, updates: Pick<Project, 'name' | 'color' | 'labels'>) => boolean
   onClose: () => void
 }
 
-export function EditProjectSection({ project, onSave, onClose }: EditProjectSectionProps) {
+export function EditProjectSection({ project, availableLabels, onSave, onClose }: EditProjectSectionProps) {
   const [name, setName] = useState(project.name)
   const [color, setColor] = useState(project.color)
+  const [labels, setLabels] = useState<string[]>(project.labels)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     setName(project.name)
     setColor(project.color)
+    setLabels(project.labels)
     setError('')
     setSaved(false)
-  }, [project.id, project.name, project.color])
+  }, [project.id, project.name, project.color, project.labels])
 
-  const hasChanges = name.trim() !== project.name || color !== project.color
+  const hasChanges =
+    name.trim() !== project.name ||
+    color !== project.color ||
+    labels.join(',') !== project.labels.join(',')
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
     if (!hasChanges) return
 
-    const updated = onSave(project.id, { name: name.trim(), color })
+    const updated = onSave(project.id, { name: name.trim(), color, labels })
     if (!updated) {
       setError('Enter a unique project name.')
       setSaved(false)
@@ -46,7 +53,7 @@ export function EditProjectSection({ project, onSave, onClose }: EditProjectSect
       <div className="edit-project-header">
         <div className="panel-heading">
           <h3>Edit project</h3>
-          <p>Update the name or color for this project.</p>
+          <p>Update the name, color, or labels for this project.</p>
         </div>
         <button type="button" className="close-edit-button" onClick={onClose} aria-label="Close edit">
           ×
@@ -87,6 +94,16 @@ export function EditProjectSection({ project, onSave, onClose }: EditProjectSect
             </label>
           ))}
         </div>
+
+        <span className="field-label">Labels</span>
+        <LabelPicker
+          selectedLabels={labels}
+          availableLabels={availableLabels}
+          onChange={(next) => {
+            setLabels(next)
+            if (saved) setSaved(false)
+          }}
+        />
 
         <div className="edit-meta">
           <span>Total tracked: {formatDuration(project.totalSeconds)}</span>

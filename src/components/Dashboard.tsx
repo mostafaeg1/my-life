@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Project, SessionRecord } from '../types'
 import { buildDashboardBuckets, type DashboardRange } from '../utils/dashboardData'
+import { getAllLabels, getLabelColor } from '../utils/labels'
 import { formatDuration } from '../utils/time'
 import { DashboardChart, type ChartSeries } from './DashboardChart'
 
@@ -21,8 +22,26 @@ const OTHER_ID = '__other__'
 
 export function Dashboard({ projects, sessions }: DashboardProps) {
   const [range, setRange] = useState<DashboardRange>('week')
+  const [labelFilter, setLabelFilter] = useState<string | null>(null)
 
-  const buckets = useMemo(() => buildDashboardBuckets(sessions, range), [sessions, range])
+  const allLabels = useMemo(() => getAllLabels(projects), [projects])
+
+  const filteredSessions = useMemo(() => {
+    if (!labelFilter) return sessions
+
+    const matchingProjectIds = new Set(
+      projects
+        .filter((project) => project.labels.some((label) => label.toLowerCase() === labelFilter.toLowerCase()))
+        .map((project) => project.id),
+    )
+
+    return sessions.filter((session) => matchingProjectIds.has(session.projectId))
+  }, [sessions, projects, labelFilter])
+
+  const buckets = useMemo(
+    () => buildDashboardBuckets(filteredSessions, range),
+    [filteredSessions, range],
+  )
 
   const series = useMemo<ChartSeries[]>(() => {
     const totalsByProject = new Map<string, number>()
@@ -75,10 +94,44 @@ export function Dashboard({ projects, sessions }: DashboardProps) {
         </p>
       </div>
 
-      {sessions.length === 0 ? (
+      {allLabels.length > 0 ? (
+        <div className="label-suggestions dashboard-label-filter">
+          {allLabels.map((label) => {
+            const isSelected = labelFilter?.toLowerCase() === label.toLowerCase()
+            return (
+              <button
+                key={label}
+                type="button"
+                className={`label-suggestion-chip ${isSelected ? 'selected' : ''}`}
+                aria-pressed={isSelected}
+                onClick={() => setLabelFilter(isSelected ? null : label)}
+              >
+                <span className="label-dot" style={{ backgroundColor: getLabelColor(label) }} />
+                {label}
+              </button>
+            )
+          })}
+          {labelFilter ? (
+            <button type="button" className="label-filter-clear" onClick={() => setLabelFilter(null)}>
+              Clear filter
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {filteredSessions.length === 0 ? (
         <div className="empty-state">
-          <p>No focus sessions yet.</p>
-          <p>Complete a session to see it charted here.</p>
+          {sessions.length === 0 ? (
+            <>
+              <p>No focus sessions yet.</p>
+              <p>Complete a session to see it charted here.</p>
+            </>
+          ) : (
+            <>
+              <p>No sessions with this label yet.</p>
+              <p>Try a different label or clear the filter.</p>
+            </>
+          )}
         </div>
       ) : (
         <>

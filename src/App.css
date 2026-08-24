@@ -484,6 +484,115 @@
   margin-bottom: 0.15rem;
 }
 
+.project-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.project-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.project-label-chip.removable {
+  padding-right: 0.4rem;
+}
+
+.label-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.label-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.label-remove-button:hover {
+  color: var(--text);
+}
+
+.label-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.label-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.label-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.label-suggestion-chip:hover {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.label-suggestion-chip.selected {
+  border-style: solid;
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.dashboard-label-filter {
+  align-items: center;
+}
+
+.label-filter-clear {
+  border: none;
+  background: none;
+  padding: 0.2rem 0.4rem;
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.label-filter-clear:hover {
+  color: var(--text);
+}
+
 .focus-panel h2 {
   font-size: 1.1rem;
 }
@@ -1184,6 +1293,16 @@
   outline: none;
   border-color: var(--border-strong);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+
+.modal-secondary-field {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.modal-secondary-field .field-label {
+  display: block;
+  margin-bottom: 0.35rem;
 }
 
 .fab-button {

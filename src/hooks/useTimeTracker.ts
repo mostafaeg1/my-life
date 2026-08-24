@@ -12,7 +12,10 @@ function loadState(): AppState {
 
     const parsed = JSON.parse(raw) as AppState
     return {
-      projects: parsed.projects ?? [],
+      projects: (parsed.projects ?? []).map((project) => ({
+        ...project,
+        labels: project.labels ?? [],
+      })),
       activeSession: parsed.activeSession ?? null,
       sessions: parsed.sessions ?? [],
     }
@@ -36,7 +39,7 @@ export function useTimeTracker() {
     saveState(state)
   }, [state])
 
-  const addProject = useCallback((name: string) => {
+  const addProject = useCallback((name: string, labels: string[] = []) => {
     const trimmed = name.trim()
     if (!trimmed) return false
 
@@ -55,6 +58,7 @@ export function useTimeTracker() {
         color: PROJECT_COLORS[current.projects.length % PROJECT_COLORS.length],
         totalSeconds: 0,
         createdAt: new Date().toISOString(),
+        labels,
       }
 
       return {
@@ -76,7 +80,7 @@ export function useTimeTracker() {
   }, [])
 
   const updateProject = useCallback(
-    (projectId: string, updates: Pick<Project, 'name' | 'color'>) => {
+    (projectId: string, updates: Pick<Project, 'name' | 'color' | 'labels'>) => {
       const trimmed = updates.name.trim()
       if (!trimmed) return false
 
@@ -97,7 +101,7 @@ export function useTimeTracker() {
           ...current,
           projects: current.projects.map((item) =>
             item.id === projectId
-              ? { ...item, name: trimmed, color: updates.color }
+              ? { ...item, name: trimmed, color: updates.color, labels: updates.labels }
               : item,
           ),
         }

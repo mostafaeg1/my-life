@@ -4,6 +4,7 @@ export interface Project {
   color: string
   totalSeconds: number
   createdAt: string
+  labels: string[]
 }
 
 export interface ActiveSession {
@@ -31,4 +32,5 @@ export interface Habit {
   color: string
   createdAt: string
   completedDates: string[]
+  labels: string[]
 }

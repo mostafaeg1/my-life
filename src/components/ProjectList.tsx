@@ -8,10 +8,11 @@ interface ProjectListProps {
   selectedProjectId: string | null
   editingProjectId: string | null
   liveElapsedSeconds: number
+  availableLabels: string[]
   onSelect: (projectId: string) => void
   onToggleEdit: (projectId: string) => void
   onCloseEdit: () => void
-  onSave: (projectId: string, updates: Pick<Project, 'name' | 'color'>) => boolean
+  onSave: (projectId: string, updates: Pick<Project, 'name' | 'color' | 'labels'>) => boolean
   onDelete: (projectId: string) => void
 }
 
@@ -21,6 +22,7 @@ export function ProjectList({
   selectedProjectId,
   editingProjectId,
   liveElapsedSeconds,
+  availableLabels,
   onSelect,
   onToggleEdit,
   onCloseEdit,
@@ -83,6 +85,7 @@ export function ProjectList({
             {isEditing ? (
               <EditProjectSection
                 project={project}
+                availableLabels={availableLabels}
                 onSave={onSave}
                 onClose={onCloseEdit}
               />
