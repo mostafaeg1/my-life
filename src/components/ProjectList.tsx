@@ -1,18 +1,13 @@
-import { EditProjectSection } from './EditProjectSection'
 import type { ActiveSession, Project } from '../types'
-import { formatDuration } from '../utils/time'
+import { formatDurationShort } from '../utils/time'
 
 interface ProjectListProps {
   projects: Project[]
   activeSession: ActiveSession | null
   selectedProjectId: string | null
-  editingProjectId: string | null
   liveElapsedSeconds: number
-  availableLabels: string[]
   onSelect: (projectId: string) => void
-  onToggleEdit: (projectId: string) => void
-  onCloseEdit: () => void
-  onSave: (projectId: string, updates: Pick<Project, 'name' | 'color' | 'labels'>) => boolean
+  onEdit: (projectId: string) => void
   onDelete: (projectId: string) => void
 }
 
@@ -20,20 +15,16 @@ export function ProjectList({
   projects,
   activeSession,
   selectedProjectId,
-  editingProjectId,
   liveElapsedSeconds,
-  availableLabels,
   onSelect,
-  onToggleEdit,
-  onCloseEdit,
-  onSave,
+  onEdit,
   onDelete,
 }: ProjectListProps) {
   if (projects.length === 0) {
     return (
       <div className="empty-state">
         <p>No projects yet.</p>
-        <p>Add one below to get started.</p>
+        <p>Use “New” to add your first one.</p>
       </div>
     )
   }
@@ -43,53 +34,43 @@ export function ProjectList({
       {projects.map((project) => {
         const isActive = activeSession?.projectId === project.id
         const isSelected = selectedProjectId === project.id
-        const isEditing = editingProjectId === project.id
         const displaySeconds = isActive
           ? project.totalSeconds + liveElapsedSeconds
           : project.totalSeconds
 
         return (
-          <li key={project.id} className={`project-item ${isEditing ? 'editing' : ''}`}>
-            <div
-              className={`project-card ${isSelected ? 'selected' : ''} ${isActive ? 'active' : ''}`}
-            >
-              <button type="button" className="project-select" onClick={() => onSelect(project.id)}>
-                <span className="project-color" style={{ backgroundColor: project.color }} />
-                <span className="project-info">
+          <li
+            key={project.id}
+            className={`project-card ${isSelected ? 'selected' : ''} ${isActive ? 'active' : ''}`}
+          >
+            <button type="button" className="project-select" onClick={() => onSelect(project.id)}>
+              <span className="project-color" style={{ backgroundColor: project.color }} />
+              <span className="project-info">
+                <span className="project-name-row">
                   <span className="project-name">{project.name}</span>
-                  <span className="project-time">{formatDuration(displaySeconds)} total</span>
+                  {isActive ? <span className="live-badge">Live</span> : null}
                 </span>
-                {isActive ? <span className="live-badge">Live</span> : null}
+                <span className="project-time">{formatDurationShort(displaySeconds)} total</span>
+              </span>
+            </button>
+            <div className="project-actions">
+              <button
+                type="button"
+                className="button button-secondary button-small"
+                aria-label={`Edit ${project.name}`}
+                onClick={() => onEdit(project.id)}
+              >
+                Edit
               </button>
-              <div className="project-actions">
-                <button
-                  type="button"
-                  className={`edit-button ${isEditing ? 'active' : ''}`}
-                  aria-label={isEditing ? `Close edit for ${project.name}` : `Edit ${project.name}`}
-                  aria-expanded={isEditing}
-                  onClick={() => onToggleEdit(project.id)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="delete-button"
-                  aria-label={`Delete ${project.name}`}
-                  onClick={() => onDelete(project.id)}
-                >
-                  ×
-                </button>
-              </div>
+              <button
+                type="button"
+                className="icon-button icon-button-plain"
+                aria-label={`Delete ${project.name}`}
+                onClick={() => onDelete(project.id)}
+              >
+                ×
+              </button>
             </div>
-
-            {isEditing ? (
-              <EditProjectSection
-                project={project}
-                availableLabels={availableLabels}
-                onSave={onSave}
-                onClose={onCloseEdit}
-              />
-            ) : null}
           </li>
         )
       })}

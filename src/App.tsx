@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Dashboard } from './components/Dashboard'
+import { EditProjectDialog } from './components/EditProjectDialog'
 import { FocusSession, type SessionMode } from './components/FocusSession'
+import { HabitList } from './components/HabitList'
 import { Habits } from './components/Habits'
 import { ProjectList } from './components/ProjectList'
 import { PromptDialog } from './components/PromptDialog'
 import { useHabits } from './hooks/useHabits'
 import { useTimeTracker } from './hooks/useTimeTracker'
+import { toDateKey } from './utils/habitDates'
 import { getAllLabels } from './utils/labels'
 import { elapsedSecondsSince, formatClock, formatDuration, formatToday, isToday } from './utils/time'
 import './App.css'
@@ -24,10 +27,11 @@ function App() {
     updateProject,
     startSession,
     stopSession,
+    cancelSession,
     getProject,
   } = useTimeTracker()
 
-  const { habits, addHabit, deleteHabit, toggleDate, updateHabitLabels } = useHabits()
+  const { habits, addHabit, deleteHabit, toggleDate, updateHabit } = useHabits()
 
   const [view, setView] = useState<View>('tracker')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
@@ -35,12 +39,15 @@ function App() {
   const [liveElapsedSeconds, setLiveElapsedSeconds] = useState(0)
   const [pendingDeleteProjectId, setPendingDeleteProjectId] = useState<string | null>(null)
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false)
+  const [isAddHabitOpen, setIsAddHabitOpen] = useState(false)
+  const [isCancelSessionOpen, setIsCancelSessionOpen] = useState(false)
   const [sessionMode, setSessionMode] = useState<SessionMode>('stopwatch')
   const [durationMinutes, setDurationMinutes] = useState(25)
 
   useEffect(() => {
     if (!activeSession) {
       setLiveElapsedSeconds(0)
+      setIsCancelSessionOpen(false)
       return
     }
 
@@ -89,12 +96,16 @@ function App() {
     startSession(selectedProjectId)
   }
 
-  function handleToggleEdit(projectId: string) {
-    setEditingProjectId((current) => (current === projectId ? null : projectId))
-  }
+  // Stable callbacks so open dialogs aren't reset by the once-a-second timer re-render.
+  const closeEdit = useCallback(() => setEditingProjectId(null), [])
+  const closeAddProject = useCallback(() => setIsAddProjectOpen(false), [])
+  const closeAddHabit = useCallback(() => setIsAddHabitOpen(false), [])
+  const cancelDeleteProject = useCallback(() => setPendingDeleteProjectId(null), [])
+  const keepSession = useCallback(() => setIsCancelSessionOpen(false), [])
 
-  function handleCloseEdit() {
-    setEditingProjectId(null)
+  function confirmCancelSession() {
+    cancelSession()
+    setIsCancelSessionOpen(false)
   }
 
   function handleDelete(projectId: string) {
@@ -120,14 +131,16 @@ function App() {
     (activeSession && isToday(activeSession.startedAt) ? liveElapsedSeconds : 0)
 
   const allLabels = useMemo(() => getAllLabels(projects), [projects])
+  const todayKey = toDateKey(new Date())
+  const habitsDoneToday = habits.filter((habit) => habit.completedDates.includes(todayKey)).length
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <nav className="mode-switch app-nav" role="radiogroup" aria-label="View">
+        <nav className="segmented app-nav" role="radiogroup" aria-label="View">
           <button
             type="button"
-            className={`mode-button ${view === 'tracker' ? 'selected' : ''}`}
+            className={`segmented-option ${view === 'tracker' ? 'selected' : ''}`}
             aria-pressed={view === 'tracker'}
             onClick={() => setView('tracker')}
           >
@@ -135,7 +148,7 @@ function App() {
           </button>
           <button
             type="button"
-            className={`mode-button ${view === 'habits' ? 'selected' : ''}`}
+            className={`segmented-option ${view === 'habits' ? 'selected' : ''}`}
             aria-pressed={view === 'habits'}
             onClick={() => setView('habits')}
           >
@@ -143,38 +156,43 @@ function App() {
           </button>
         </nav>
 
-        {view === 'tracker' ? (
-          <>
-            <div className="sidebar-header">
-              <h2>Projects</h2>
-              <span className="project-count">{projects.length}</span>
-            </div>
+        <div className="sidebar-header">
+          <h2>{view === 'habits' ? 'Habits' : 'Projects'}</h2>
+          <span className="count-badge">{view === 'habits' ? habits.length : projects.length}</span>
+          <button
+            type="button"
+            className="button button-dark button-small sidebar-new-button"
+            aria-label={view === 'habits' ? 'New habit' : 'New project'}
+            onClick={() => (view === 'habits' ? setIsAddHabitOpen(true) : setIsAddProjectOpen(true))}
+          >
+            <span aria-hidden="true">+</span> New
+          </button>
+        </div>
 
-            <div className="sidebar-content">
-              <ProjectList
-                projects={projects}
-                activeSession={activeSession}
-                selectedProjectId={selectedProjectId}
-                editingProjectId={editingProjectId}
-                liveElapsedSeconds={liveElapsedSeconds}
-                availableLabels={allLabels}
-                onSelect={handleSelect}
-                onToggleEdit={handleToggleEdit}
-                onCloseEdit={handleCloseEdit}
-                onSave={updateProject}
-                onDelete={handleDelete}
-              />
-            </div>
-          </>
-        ) : null}
+        {view === 'tracker' ? (
+          <div className="sidebar-content">
+            <ProjectList
+              projects={projects}
+              activeSession={activeSession}
+              selectedProjectId={selectedProjectId}
+              liveElapsedSeconds={liveElapsedSeconds}
+              onSelect={handleSelect}
+              onEdit={setEditingProjectId}
+              onDelete={handleDelete}
+            />
+          </div>
+        ) : (
+          <div className="sidebar-content">
+            <HabitList habits={habits} />
+          </div>
+        )}
       </aside>
 
       <div className="main-content">
         <header className="app-header">
           <div>
-            <p className="eyebrow">My Life</p>
+            <p className="eyebrow">My Life · {formatToday()}</p>
             <h1>{view === 'habits' ? 'Habits' : 'Project Time Tracker'}</h1>
-            <p className="today-date">{formatToday()}</p>
             <p className="subtitle">
               {view === 'habits'
                 ? "Build routines and don't break the chain."
@@ -183,8 +201,15 @@ function App() {
           </div>
           {view === 'tracker' ? (
             <div className="summary-card">
-              <span className="summary-label">Focused Time</span>
+              <span className="summary-label">Focused today</span>
               <strong>{formatDuration(todaysFocusedSeconds)}</strong>
+            </div>
+          ) : habits.length > 0 ? (
+            <div className="summary-card">
+              <span className="summary-label">Done today</span>
+              <strong>
+                {habitsDoneToday} / {habits.length}
+              </strong>
             </div>
           ) : null}
         </header>
@@ -192,10 +217,12 @@ function App() {
         {view === 'habits' ? (
           <Habits
             habits={habits}
+            isAddOpen={isAddHabitOpen}
+            onAddClose={closeAddHabit}
             onAdd={addHabit}
             onDelete={deleteHabit}
             onToggleDate={toggleDate}
-            onUpdateLabels={updateHabitLabels}
+            onUpdate={updateHabit}
           />
         ) : (
           <>
@@ -210,26 +237,21 @@ function App() {
                 onDurationMinutesChange={setDurationMinutes}
                 onStart={handleStart}
                 onStop={stopSession}
+                onCancel={() => setIsCancelSessionOpen(true)}
               />
             </main>
 
-            <section className="tracker-dashboard">
-              <p className="eyebrow">Overview</p>
-              <h2 className="tracker-dashboard-heading">Focused time breakdown</h2>
-              <Dashboard projects={projects} sessions={sessions} />
-            </section>
-
-            <button
-              type="button"
-              className="fab-button"
-              aria-label="Add project"
-              onClick={() => setIsAddProjectOpen(true)}
-            >
-              +
-            </button>
+            <Dashboard projects={projects} sessions={sessions} />
           </>
         )}
       </div>
+
+      <EditProjectDialog
+        project={editingProjectId ? getProject(editingProjectId) : undefined}
+        availableLabels={allLabels}
+        onSave={updateProject}
+        onClose={closeEdit}
+      />
 
       <ConfirmDialog
         open={pendingDeleteProjectId !== null}
@@ -238,12 +260,24 @@ function App() {
         confirmLabel="Delete"
         danger
         onConfirm={confirmDeleteProject}
-        onCancel={() => setPendingDeleteProjectId(null)}
+        onCancel={cancelDeleteProject}
+      />
+
+      <ConfirmDialog
+        open={isCancelSessionOpen && isRunning}
+        title="Cancel this session?"
+        message={`The ${formatDuration(liveElapsedSeconds)} tracked so far won't be saved to ${activeProject?.name ?? 'this project'}.`}
+        confirmLabel="Discard session"
+        cancelLabel="Keep going"
+        danger
+        onConfirm={confirmCancelSession}
+        onCancel={keepSession}
       />
 
       <PromptDialog
         open={isAddProjectOpen}
-        title="Add project"
+        title="New project"
+        fieldLabel="Project name"
         placeholder="Math homework, reading..."
         confirmLabel="Add project"
         labelsField={{ label: 'Labels (optional)', availableLabels: allLabels }}
@@ -252,7 +286,7 @@ function App() {
           if (added) setIsAddProjectOpen(false)
           return added
         }}
-        onCancel={() => setIsAddProjectOpen(false)}
+        onCancel={closeAddProject}
       />
     </div>
   )

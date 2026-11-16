@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PROJECT_COLORS } from '../constants/projectColors'
+import { HABIT_COLORS, PROJECT_COLORS } from '../constants/projectColors'
 import type { Habit } from '../types'
 
 const STORAGE_KEY = 'project-time-tracker-habits'
@@ -17,11 +17,21 @@ function loadState(): HabitState {
 
     const parsed = JSON.parse(raw) as HabitState
     return {
-      habits: (parsed.habits ?? []).map((habit) => ({ ...habit, labels: habit.labels ?? [] })),
+      habits: (parsed.habits ?? []).map((habit) => ({
+        ...habit,
+        labels: habit.labels ?? [],
+        color: toHabitColor(habit.color),
+      })),
     }
   } catch {
     return { habits: [] }
   }
+}
+
+/** Habits saved before HABIT_COLORS existed use the brighter project palette; map them across. */
+function toHabitColor(color: string): string {
+  const index = PROJECT_COLORS.indexOf(color)
+  return index >= 0 ? HABIT_COLORS[index] : color
 }
 
 function saveState(state: HabitState) {
@@ -55,7 +65,7 @@ export function useHabits() {
       const habit: Habit = {
         id: createId(),
         name: trimmed,
-        color: PROJECT_COLORS[current.habits.length % PROJECT_COLORS.length],
+        color: HABIT_COLORS[current.habits.length % HABIT_COLORS.length],
         createdAt: new Date().toISOString(),
         completedDates: [],
         labels,
@@ -65,12 +75,6 @@ export function useHabits() {
     })
 
     return added
-  }, [])
-
-  const updateHabitLabels = useCallback((habitId: string, labels: string[]) => {
-    setState((current) => ({
-      habits: current.habits.map((habit) => (habit.id === habitId ? { ...habit, labels } : habit)),
-    }))
   }, [])
 
   const deleteHabit = useCallback((habitId: string) => {
@@ -95,11 +99,39 @@ export function useHabits() {
     }))
   }, [])
 
+  const updateHabit = useCallback(
+    (habitId: string, updates: Pick<Habit, 'name' | 'color' | 'labels'>) => {
+      const trimmed = updates.name.trim()
+      if (!trimmed) return false
+
+      let updated = false
+
+      setState((current) => {
+        const duplicate = current.habits.some(
+          (habit) => habit.id !== habitId && habit.name.toLowerCase() === trimmed.toLowerCase(),
+        )
+        if (duplicate) return current
+
+        updated = true
+        return {
+          habits: current.habits.map((habit) =>
+            habit.id === habitId
+              ? { ...habit, name: trimmed, color: updates.color, labels: updates.labels }
+              : habit,
+          ),
+        }
+      })
+
+      return updated
+    },
+    [],
+  )
+
   return {
     habits: state.habits,
     addHabit,
     deleteHabit,
     toggleDate,
-    updateHabitLabels,
+    updateHabit,
   }
 }

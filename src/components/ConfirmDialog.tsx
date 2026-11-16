@@ -22,6 +22,11 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
+  const onCancelRef = useRef(onCancel)
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     if (!open) return
@@ -29,12 +34,12 @@ export function ConfirmDialog({
     confirmButtonRef.current?.focus()
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key === 'Escape') onCancelRef.current()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onCancel])
+  }, [open])
 
   if (!open) return null
 
@@ -49,15 +54,17 @@ export function ConfirmDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="modal-dialog-title">{title}</h2>
-        <p id="modal-dialog-message">{message}</p>
+        <p id="modal-dialog-message" className="modal-subtitle">
+          {message}
+        </p>
         <div className="modal-actions">
-          <button type="button" className="modal-cancel-button" onClick={onCancel}>
+          <button type="button" className="button button-secondary" onClick={onCancel}>
             {cancelLabel}
           </button>
           <button
             ref={confirmButtonRef}
             type="button"
-            className={`modal-confirm-button ${danger ? 'danger' : ''}`}
+            className={`button ${danger ? 'button-danger' : 'button-primary'}`}
             onClick={onConfirm}
           >
             {confirmLabel}

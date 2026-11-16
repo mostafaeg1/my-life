@@ -75,7 +75,7 @@ export function LabelPicker({ selectedLabels, availableLabels, onChange }: Label
         onChange={(event) => setInputValue(event.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => addLabels(inputValue)}
-        placeholder="Type a label and press Enter..."
+        placeholder="Add a label, then press Enter"
         maxLength={40}
       />
 

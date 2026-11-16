@@ -9,6 +9,7 @@ interface PromptDialogLabelsField {
 interface PromptDialogProps {
   open: boolean
   title: string
+  fieldLabel: string
   placeholder: string
   confirmLabel?: string
   errorMessage?: string
@@ -20,6 +21,7 @@ interface PromptDialogProps {
 export function PromptDialog({
   open,
   title,
+  fieldLabel,
   placeholder,
   confirmLabel = 'Add',
   errorMessage = 'Enter a name that is not already in your list.',
@@ -31,7 +33,14 @@ export function PromptDialog({
   const [labels, setLabels] = useState<string[]>([])
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const onCancelRef = useRef(onCancel)
 
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
+
+  // Depends on `open` only, so a parent re-render (e.g. the live timer ticking)
+  // doesn't wipe what the user has typed.
   useEffect(() => {
     if (!open) return
 
@@ -41,12 +50,12 @@ export function PromptDialog({
     inputRef.current?.focus()
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key === 'Escape') onCancelRef.current()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onCancel])
+  }, [open])
 
   if (!open) return null
 
@@ -73,22 +82,33 @@ export function PromptDialog({
         aria-labelledby="prompt-dialog-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="prompt-dialog-title">{title}</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            ref={inputRef}
-            type="text"
-            className="modal-input"
-            value={value}
-            onChange={(event) => {
-              setValue(event.target.value)
-              if (error) setError('')
-            }}
-            placeholder={placeholder}
-            maxLength={60}
-          />
+        <div className="modal-header">
+          <h2 id="prompt-dialog-title">{title}</h2>
+          <button type="button" className="icon-button" onClick={onCancel} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <form className="modal-form" onSubmit={handleSubmit}>
+          <div className="form-field">
+            <label className="field-label" htmlFor="prompt-dialog-input">
+              {fieldLabel}
+            </label>
+            <input
+              id="prompt-dialog-input"
+              ref={inputRef}
+              type="text"
+              className="modal-input"
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value)
+                if (error) setError('')
+              }}
+              placeholder={placeholder}
+              maxLength={60}
+            />
+          </div>
           {labelsField ? (
-            <div className="modal-secondary-field">
+            <div className="form-field">
               <span className="field-label">{labelsField.label}</span>
               <LabelPicker
                 selectedLabels={labels}
@@ -99,10 +119,10 @@ export function PromptDialog({
           ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <div className="modal-actions">
-            <button type="button" className="modal-cancel-button" onClick={onCancel}>
+            <button type="button" className="button button-secondary" onClick={onCancel}>
               Cancel
             </button>
-            <button type="submit" className="modal-confirm-button" disabled={!value.trim()}>
+            <button type="submit" className="button button-primary" disabled={!value.trim()}>
               {confirmLabel}
             </button>
           </div>

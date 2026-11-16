@@ -7,6 +7,8 @@ export interface Project {
   labels: string[]
 }
 
+export type ProjectUpdates = Pick<Project, 'name' | 'color' | 'labels' | 'totalSeconds'>
+
 export interface ActiveSession {
   projectId: string
   startedAt: string
