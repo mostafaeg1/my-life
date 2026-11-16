@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Project, SessionRecord } from '../types'
-import { buildDashboardBuckets, type DashboardRange } from '../utils/dashboardData'
+import { buildDashboardBuckets, formatRangeLabel, type DashboardRange } from '../utils/dashboardData'
 import { getAllLabels, getLabelColor } from '../utils/labels'
 import { formatDuration } from '../utils/time'
 import { DashboardChart, type ChartSeries } from './DashboardChart'
@@ -72,15 +72,35 @@ export function Dashboard({ projects, sessions }: DashboardProps) {
 
   const rangeTotalSeconds = buckets.reduce((sum, bucket) => sum + bucket.totalSeconds, 0)
 
+  const emptyMessage =
+    rangeTotalSeconds > 0
+      ? null
+      : sessions.length === 0
+        ? 'No focused time yet. Start a session and it will appear here.'
+        : labelFilter
+          ? 'No focused time with this label in this period.'
+          : 'No focused time in this period.'
+
   return (
     <section className="dashboard-panel">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Overview</p>
+          <h2>Focused time breakdown</h2>
+        </div>
+        <p className="dashboard-total">
+          <span>Focused time</span>
+          <strong>{formatDuration(rangeTotalSeconds)}</strong>
+        </p>
+      </div>
+
       <div className="dashboard-toolbar">
-        <div className="mode-switch" role="radiogroup" aria-label="Chart range">
+        <div className="segmented" role="radiogroup" aria-label="Chart range">
           {RANGE_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
-              className={`mode-button ${range === option.value ? 'selected' : ''}`}
+              className={`segmented-option ${range === option.value ? 'selected' : ''}`}
               aria-pressed={range === option.value}
               onClick={() => setRange(option.value)}
             >
@@ -88,10 +108,7 @@ export function Dashboard({ projects, sessions }: DashboardProps) {
             </button>
           ))}
         </div>
-        <p className="dashboard-total">
-          <span>Focused time</span>
-          <strong>{formatDuration(rangeTotalSeconds)}</strong>
-        </p>
+        <span className="dashboard-range-label">{formatRangeLabel(range)}</span>
       </div>
 
       {allLabels.length > 0 ? (
@@ -112,31 +129,17 @@ export function Dashboard({ projects, sessions }: DashboardProps) {
             )
           })}
           {labelFilter ? (
-            <button type="button" className="label-filter-clear" onClick={() => setLabelFilter(null)}>
+            <button type="button" className="text-button" onClick={() => setLabelFilter(null)}>
               Clear filter
             </button>
           ) : null}
         </div>
       ) : null}
 
-      {filteredSessions.length === 0 ? (
-        <div className="empty-state">
-          {sessions.length === 0 ? (
-            <>
-              <p>No focus sessions yet.</p>
-              <p>Complete a session to see it charted here.</p>
-            </>
-          ) : (
-            <>
-              <p>No sessions with this label yet.</p>
-              <p>Try a different label or clear the filter.</p>
-            </>
-          )}
-        </div>
-      ) : (
-        <>
-          <DashboardChart buckets={buckets} series={series} />
+      <DashboardChart buckets={buckets} series={series} emptyMessage={emptyMessage} />
 
+      {rangeTotalSeconds > 0 ? (
+        <>
           {series.length > 0 ? (
             <ul className="dashboard-legend">
               {series.map((item) => (
@@ -185,7 +188,7 @@ export function Dashboard({ projects, sessions }: DashboardProps) {
             </div>
           </details>
         </>
-      )}
+      ) : null}
     </section>
   )
 }

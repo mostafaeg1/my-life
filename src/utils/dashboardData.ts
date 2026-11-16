@@ -67,6 +67,21 @@ function buildMonthlyBuckets(months: number, now: Date): DashboardBucket[] {
   return buckets
 }
 
+const RANGE_DAY_LABEL = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+const RANGE_MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
+
+/** Human label for the span a range covers, e.g. "Nov 9 – Nov 15". */
+export function formatRangeLabel(range: DashboardRange, now: Date = new Date()): string {
+  if (range === 'year') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+    return `${RANGE_MONTH_LABEL.format(start)} – ${RANGE_MONTH_LABEL.format(now)}`
+  }
+
+  const days = range === 'week' ? 7 : 30
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1))
+  return `${RANGE_DAY_LABEL.format(start)} – ${RANGE_DAY_LABEL.format(now)}`
+}
+
 export function buildDashboardBuckets(
   sessions: SessionRecord[],
   range: DashboardRange,

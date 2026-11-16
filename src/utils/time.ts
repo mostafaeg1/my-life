@@ -26,12 +26,30 @@ export function formatClock(totalSeconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 }
 
+/** Always HH:MM:SS, e.g. 00:25:00 — used for the large focus timer. */
+export function formatClockLong(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return [hours, minutes, seconds].map((part) => part.toString().padStart(2, '0')).join(':')
+}
+
+/** Like formatDuration, but drops seconds once there are hours: "12h 00m". */
+export function formatDurationShort(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600)
+  if (hours === 0) return formatDuration(totalSeconds)
+
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  return `${hours}h ${minutes.toString().padStart(2, '0')}m`
+}
+
 export function elapsedSecondsSince(isoDate: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000))
 }
 
 export function formatCompactDuration(totalSeconds: number): string {
-  if (totalSeconds <= 0) return '0'
+  if (totalSeconds <= 0) return '0m'
 
   const hours = totalSeconds / 3600
   if (hours >= 1) {

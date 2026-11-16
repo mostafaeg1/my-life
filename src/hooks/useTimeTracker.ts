@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { PROJECT_COLORS } from '../constants/projectColors'
-import type { ActiveSession, AppState, Project } from '../types'
+import type { ActiveSession, AppState, Project, ProjectUpdates } from '../types'
 const STORAGE_KEY = 'project-time-tracker'
 
 function loadState(): AppState {
@@ -80,7 +80,7 @@ export function useTimeTracker() {
   }, [])
 
   const updateProject = useCallback(
-    (projectId: string, updates: Pick<Project, 'name' | 'color' | 'labels'>) => {
+    (projectId: string, updates: ProjectUpdates) => {
       const trimmed = updates.name.trim()
       if (!trimmed) return false
 
@@ -97,11 +97,55 @@ export function useTimeTracker() {
         if (duplicate) return current
 
         updated = true
+
+        const newTotal = Math.max(0, Math.floor(updates.totalSeconds))
+        const delta = newTotal - project.totalSeconds
+        let sessions = current.sessions
+
+        // Keep the dashboard (built from session records) in sync with the edited total.
+        if (delta > 0) {
+          const endedAt = new Date()
+          sessions = [
+            ...sessions,
+            {
+              id: createId(),
+              projectId,
+              startedAt: new Date(endedAt.getTime() - delta * 1000).toISOString(),
+              endedAt: endedAt.toISOString(),
+              seconds: delta,
+            },
+          ]
+        } else if (delta < 0) {
+          // Remove time from the most recent sessions first.
+          let remaining = -delta
+          const trimmedSessions: typeof sessions = []
+          for (const session of [...sessions].reverse()) {
+            if (session.projectId !== projectId || remaining <= 0) {
+              trimmedSessions.push(session)
+              continue
+            }
+            if (session.seconds <= remaining) {
+              remaining -= session.seconds
+              continue
+            }
+            trimmedSessions.push({ ...session, seconds: session.seconds - remaining })
+            remaining = 0
+          }
+          sessions = trimmedSessions.reverse()
+        }
+
         return {
           ...current,
+          sessions,
           projects: current.projects.map((item) =>
             item.id === projectId
-              ? { ...item, name: trimmed, color: updates.color, labels: updates.labels }
+              ? {
+                  ...item,
+                  name: trimmed,
+                  color: updates.color,
+                  labels: updates.labels,
+                  totalSeconds: newTotal,
+                }
               : item,
           ),
         }
@@ -155,6 +199,11 @@ export function useTimeTracker() {
     })
   }, [])
 
+  /** Ends the running session without recording any of its time. */
+  const cancelSession = useCallback(() => {
+    setState((current) => (current.activeSession ? { ...current, activeSession: null } : current))
+  }, [])
+
   const getProject = useCallback(
     (projectId: string) => state.projects.find((project) => project.id === projectId),
     [state.projects],
@@ -169,6 +218,7 @@ export function useTimeTracker() {
     updateProject,
     startSession,
     stopSession,
+    cancelSession,
     getProject,
   }
 }

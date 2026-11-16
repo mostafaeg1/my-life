@@ -1,5 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react'
-import { buildMonthGrid, buildYearGrid, type CalendarDay } from '../utils/habitDates'
+import { useState } from 'react'
+import { buildMonthGrid, type CalendarDay } from '../utils/habitDates'
 
 interface HabitChainProps {
   completedDates: string[]
@@ -9,131 +9,74 @@ interface HabitChainProps {
 type CalendarView = 'month' | 'year'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WEEKDAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const MONTH_YEAR_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
+const MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long' })
 const FULL_DAY_LABEL = new Intl.DateTimeFormat(undefined, {
   weekday: 'long',
   month: 'long',
   day: 'numeric',
+  year: 'numeric',
 })
 
-function getBandCount(): number {
-  if (typeof window === 'undefined') return 4
-  if (window.innerWidth <= 560) return 1
-  if (window.innerWidth <= 860) return 2
-  return 4
+/** Month grids always have 6 rows; drop rows that fall entirely in the next month. */
+function monthWeeks(year: number, month: number): CalendarDay[][] {
+  return buildMonthGrid(year, month).filter((week) => week.some((day) => day.isInPeriod))
 }
 
-function useYearBandCount(): number {
-  const [bandCount, setBandCount] = useState(getBandCount)
-
-  useEffect(() => {
-    function handleResize() {
-      setBandCount(getBandCount())
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  return bandCount
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <path
+        d="M3 6.2l2 2 4-4.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
 
-interface CalendarGridProps {
-  weeks: CalendarDay[][]
-  completed: Set<string>
+interface DayCellProps {
+  day: CalendarDay
+  isDone: boolean
+  compact?: boolean
   onToggle: (dateKey: string) => void
-  bands?: number
 }
 
-function CalendarGrid({ weeks, completed, onToggle, bands = 1 }: CalendarGridProps) {
-  function renderDay(day: CalendarDay, position?: CSSProperties) {
-    const isDone = day.isInPeriod && completed.has(day.key)
-    const isInteractive = day.isInPeriod && !day.isFuture
-
-    return (
-      <button
-        key={day.key}
-        type="button"
-        className={[
-          'habit-month-day',
-          isDone ? 'done' : '',
-          day.isInPeriod ? '' : 'outside',
-          day.isFuture ? 'future' : '',
-          day.isToday ? 'today' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={position}
-        disabled={!isInteractive}
-        aria-pressed={isDone}
-        aria-label={`${FULL_DAY_LABEL.format(day.date)}: ${isDone ? 'done' : 'not done'}`}
-        title={FULL_DAY_LABEL.format(day.date)}
-        onClick={() => onToggle(day.key)}
-      >
-        {day.isInPeriod ? (
-          isDone ? (
-            <span className="habit-day-content">
-              <span className="habit-day-mark" aria-hidden="true">
-                ×
-              </span>
-              <span className="habit-day-number">{day.dayNumber}</span>
-            </span>
-          ) : (
-            day.dayNumber
-          )
-        ) : null}
-      </button>
-    )
+function DayCell({ day, isDone, compact = false, onToggle }: DayCellProps) {
+  if (!day.isInPeriod) {
+    return <span className="habit-day is-outside" aria-hidden="true" />
   }
 
-  if (bands <= 1) {
-    return (
-      <div className="habit-month-grid">
-        <div className="habit-month-weekdays">
-          {WEEKDAY_LABELS.map((label) => (
-            <span key={label}>{label}</span>
-          ))}
-        </div>
-        <div className="habit-month-weeks">
-          {weeks.map((week, index) => (
-            <div className="habit-month-week" key={index}>
-              {week.map((day) => renderDay(day))}
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  const rowsPerBand = Math.ceil(weeks.length / bands)
+  const className = [
+    'habit-day',
+    isDone ? 'is-done' : '',
+    day.isFuture ? 'is-future' : '',
+    day.isToday ? 'is-today' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div
-      className="habit-year-grid"
-      style={{
-        gridTemplateColumns: `repeat(${bands * 7}, 2.1rem)`,
-        gridTemplateRows: `auto repeat(${rowsPerBand}, 2.1rem)`,
-      }}
+    <button
+      type="button"
+      className={className}
+      disabled={day.isFuture}
+      aria-pressed={isDone}
+      aria-label={`${FULL_DAY_LABEL.format(day.date)}: ${isDone ? 'done' : 'not done'}`}
+      title={FULL_DAY_LABEL.format(day.date)}
+      onClick={() => onToggle(day.key)}
     >
-      {Array.from({ length: bands }).map((_, band) =>
-        WEEKDAY_LABELS.map((label, dayIndex) => (
-          <span
-            key={`heading-${band}-${label}`}
-            className="habit-year-weekday-label"
-            style={{ gridColumn: band * 7 + dayIndex + 1, gridRow: 1 }}
-          >
-            {label}
-          </span>
-        )),
-      )}
-      {weeks.map((week, weekIndex) => {
-        const band = Math.floor(weekIndex / rowsPerBand)
-        const rowInBand = weekIndex % rowsPerBand
-        return week.map((day, dayIndex) =>
-          renderDay(day, { gridColumn: band * 7 + dayIndex + 1, gridRow: rowInBand + 2 }),
-        )
-      })}
-    </div>
+      {day.dayNumber}
+      {isDone && !compact ? (
+        <span className="habit-day-check">
+          <CheckIcon />
+        </span>
+      ) : null}
+    </button>
   )
 }
 
@@ -141,63 +84,48 @@ export function HabitChain({ completedDates, onToggle }: HabitChainProps) {
   const today = new Date()
   const [view, setView] = useState<CalendarView>('month')
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() })
-  const yearBandCount = useYearBandCount()
 
   const completed = new Set(completedDates)
   const isCurrentMonth = cursor.year === today.getFullYear() && cursor.month === today.getMonth()
   const isCurrentYear = cursor.year === today.getFullYear()
+  const isNextDisabled = view === 'year' ? isCurrentYear : isCurrentMonth
 
   function goPrev() {
-    if (view === 'year') {
-      setCursor((current) => ({ ...current, year: current.year - 1 }))
-      return
-    }
-
     setCursor((current) =>
-      current.month === 0
-        ? { year: current.year - 1, month: 11 }
-        : { year: current.year, month: current.month - 1 },
+      view === 'year'
+        ? { ...current, year: current.year - 1 }
+        : current.month === 0
+          ? { year: current.year - 1, month: 11 }
+          : { year: current.year, month: current.month - 1 },
     )
   }
 
   function goNext() {
-    if (view === 'year') {
-      if (isCurrentYear) return
-      setCursor((current) => ({ ...current, year: current.year + 1 }))
-      return
-    }
-
-    if (isCurrentMonth) return
+    if (isNextDisabled) return
     setCursor((current) =>
-      current.month === 11
-        ? { year: current.year + 1, month: 0 }
-        : { year: current.year, month: current.month + 1 },
+      view === 'year'
+        ? { ...current, year: current.year + 1 }
+        : current.month === 11
+          ? { year: current.year + 1, month: 0 }
+          : { year: current.year, month: current.month + 1 },
     )
   }
-
-  const isNextDisabled = view === 'year' ? isCurrentYear : isCurrentMonth
-  const weeks = view === 'year' ? buildYearGrid(cursor.year) : buildMonthGrid(cursor.year, cursor.month)
 
   return (
     <div className="habit-calendar">
       <div className="habit-calendar-toolbar">
-        <div className="mode-switch" role="radiogroup" aria-label="Calendar view">
-          <button
-            type="button"
-            className={`mode-button ${view === 'month' ? 'selected' : ''}`}
-            aria-pressed={view === 'month'}
-            onClick={() => setView('month')}
-          >
-            Month
-          </button>
-          <button
-            type="button"
-            className={`mode-button ${view === 'year' ? 'selected' : ''}`}
-            aria-pressed={view === 'year'}
-            onClick={() => setView('year')}
-          >
-            Year
-          </button>
+        <div className="segmented" role="radiogroup" aria-label="Calendar view">
+          {(['month', 'year'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`segmented-option ${view === option ? 'selected' : ''}`}
+              aria-pressed={view === option}
+              onClick={() => setView(option)}
+            >
+              {option === 'month' ? 'Month' : 'Year'}
+            </button>
+          ))}
         </div>
 
         <div className="habit-calendar-nav">
@@ -210,7 +138,9 @@ export function HabitChain({ completedDates, onToggle }: HabitChainProps) {
             ‹
           </button>
           <span className="habit-calendar-label">
-            {view === 'month' ? MONTH_YEAR_LABEL.format(new Date(cursor.year, cursor.month, 1)) : cursor.year}
+            {view === 'month'
+              ? MONTH_YEAR_LABEL.format(new Date(cursor.year, cursor.month, 1))
+              : cursor.year}
           </span>
           <button
             type="button"
@@ -224,12 +154,53 @@ export function HabitChain({ completedDates, onToggle }: HabitChainProps) {
         </div>
       </div>
 
-      <CalendarGrid
-        weeks={weeks}
-        completed={completed}
-        onToggle={onToggle}
-        bands={view === 'year' ? yearBandCount : 1}
-      />
+      {view === 'month' ? (
+        <div className="habit-month">
+          <div className="habit-weekdays">
+            {WEEKDAY_LABELS.map((label) => (
+              <span key={label}>{label}</span>
+            ))}
+          </div>
+          <div className="habit-days">
+            {monthWeeks(cursor.year, cursor.month)
+              .flat()
+              .map((day) => (
+                <DayCell
+                  key={day.key}
+                  day={day}
+                  isDone={completed.has(day.key)}
+                  onToggle={onToggle}
+                />
+              ))}
+          </div>
+        </div>
+      ) : (
+        <div className="habit-year">
+          {Array.from({ length: 12 }, (_, month) => (
+            <section key={month} className="habit-mini-month" aria-label={MONTH_LABEL.format(new Date(cursor.year, month, 1))}>
+              <h5>{MONTH_LABEL.format(new Date(cursor.year, month, 1))}</h5>
+              <div className="habit-weekdays">
+                {WEEKDAY_INITIALS.map((label, index) => (
+                  <span key={index}>{label}</span>
+                ))}
+              </div>
+              <div className="habit-days">
+                {monthWeeks(cursor.year, month)
+                  .flat()
+                  .map((day) => (
+                    <DayCell
+                      key={day.key}
+                      day={day}
+                      isDone={completed.has(day.key)}
+                      compact
+                      onToggle={onToggle}
+                    />
+                  ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
